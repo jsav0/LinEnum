@@ -76,6 +76,11 @@ echo -e "\n"
 echo -e "\e[00;33mScan started at:"; date 
 echo -e "\e[00m\n" 
 }
+is_interactive() {
+	printf "\n"
+	read -p "Press any key to continue.."
+	printf "\n"
+}
 
 # useful binaries (thanks to https://gtfobins.github.io/)
 binarylist='aria2c\|arp\|ash\|awk\|base64\|bash\|busybox\|cat\|chmod\|chown\|cp\|csh\|curl\|cut\|dash\|date\|dd\|diff\|dmsetup\|docker\|ed\|emacs\|env\|expand\|expect\|file\|find\|flock\|fmt\|fold\|ftp\|gawk\|gdb\|gimp\|git\|grep\|head\|ht\|iftop\|ionice\|ip$\|irb\|jjs\|jq\|jrunscript\|ksh\|ld.so\|ldconfig\|less\|logsave\|lua\|make\|man\|mawk\|more\|mv\|mysql\|nano\|nawk\|nc\|netcat\|nice\|nl\|nmap\|node\|od\|openssl\|perl\|pg\|php\|pic\|pico\|python\|readelf\|rlwrap\|rpm\|rpmquery\|rsync\|ruby\|run-parts\|rvim\|scp\|script\|sed\|setarch\|sftp\|sh\|shuf\|socat\|sort\|sqlite3\|ssh$\|start-stop-daemon\|stdbuf\|strace\|systemctl\|tail\|tar\|taskset\|tclsh\|tee\|telnet\|tftp\|time\|timeout\|ul\|unexpand\|uniq\|unshare\|vi\|vim\|watch\|wget\|wish\|xargs\|xxd\|zip\|zsh'
@@ -1335,13 +1340,14 @@ call_each()
   footer
 }
 
-while getopts "h:k:r:e:st" option; do
+while getopts "h:k:r:e:sti" option; do
  case "${option}" in
     k) keyword=${OPTARG};;
     r) report=${OPTARG}"-"`date +"%d-%m-%y"`;;
     e) export=${OPTARG};;
     s) sudopass=1;;
     t) thorough=1;;
+    i) interactive=1;;
     h) usage; exit;;
     *) usage; exit;;
  esac
