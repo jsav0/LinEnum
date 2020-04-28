@@ -35,6 +35,12 @@ echo -e "\e[00;33m# $version\e[00m\n"
 
 }
 
+is_interactive() {
+	printf "\n"
+	read -p "Press enter to continue.."
+	printf "\n"
+}
+
 debug_info()
 {
 echo "[-] Debug Info" 
@@ -111,6 +117,9 @@ if [ "$hostnamed" ]; then
   echo -e "\e[00;31m[-] Hostname:\e[00m\n$hostnamed" 
   echo -e "\n" 
 fi
+
+[ "$interactive" ] && is_interactive
+
 }
 
 user_info()
@@ -350,6 +359,9 @@ if [ "$sshrootlogin" = "yes" ]; then
   echo -e "\e[00;31m[-] Root is allowed to login via SSH:\e[00m" ; grep "PermitRootLogin " /etc/ssh/sshd_config 2>/dev/null | grep -v "#" 
   echo -e "\n"
 fi
+
+[ "$interactive" ] && is_interactive
+
 }
 
 environmental_info()
@@ -413,6 +425,9 @@ if [ "$export" ] && [ "$logindefs" ]; then
   mkdir $format/etc-export/ 2>/dev/null
   cp /etc/login.defs $format/etc-export/login.defs 2>/dev/null
 fi
+
+[ "$interactive" ] && is_interactive
+
 }
 
 job_info()
@@ -479,6 +494,8 @@ if [ "$systemdtimers" ]; then
   echo -e "\e[00;31m[-] Systemd timers:\e[00m\n$systemdtimers\n$info"
   echo -e "\n"
 fi
+
+[ "$interactive" ] && is_interactive
 
 }
 
@@ -564,6 +581,9 @@ if [ ! "$udpservs" ] && [ "$udpservsip" ]; then
   echo -e "\e[00;31m[-] Listening UDP:\e[00m\n$udpservsip" 
   echo -e "\n"
 fi
+
+[ "$interactive" ] && is_interactive
+
 }
 
 services_info()
@@ -697,6 +717,9 @@ if [ "$systemdperms" ]; then
    echo -e "\e[00;33m[+] /lib/systemd/* config files not belonging to root:\e[00m\n$systemdperms"
    echo -e "\n"
 fi
+
+[ "$interactive" ] && is_interactive
+
 }
 
 software_configs()
@@ -710,86 +733,103 @@ if [ "$sudover" ]; then
   echo -e "\n"
 fi
 
-command -v mysql && {
-	#mysql details - if installed
-	mysqlver=`mysql --version 2>/dev/null`
-	echo -e "\e[00;31m[-] MYSQL version:\e[00m\n$mysqlver" 
-	echo -e "\n"
+#mysql details - if installed
+mysqlver=`mysql --version 2>/dev/null`
+if [ "$mysqlver" ]; then
+  echo -e "\e[00;31m[-] MYSQL version:\e[00m\n$mysqlver" 
+  echo -e "\n"
+fi
 
-	#checks to see if root/root will get us a connection
-	mysqlconnect=`mysqladmin -uroot -proot version 2>/dev/null`
-	echo -e "\e[00;33m[+] We can connect to the local MYSQL service with default root/root credentials!\e[00m\n$mysqlconnect" 
-	echo -e "\n"
+#checks to see if root/root will get us a connection
+mysqlconnect=`mysqladmin -uroot -proot version 2>/dev/null`
+if [ "$mysqlconnect" ]; then
+  echo -e "\e[00;33m[+] We can connect to the local MYSQL service with default root/root credentials!\e[00m\n$mysqlconnect" 
+  echo -e "\n"
+fi
 
-	#mysql version details
-	mysqlconnectnopass=`mysqladmin -uroot version 2>/dev/null`
-	echo -e "\e[00;33m[+] We can connect to the local MYSQL service as 'root' and without a password!\e[00m\n$mysqlconnectnopass" 
-	echo -e "\n"
-}
+#mysql version details
+mysqlconnectnopass=`mysqladmin -uroot version 2>/dev/null`
+if [ "$mysqlconnectnopass" ]; then
+  echo -e "\e[00;33m[+] We can connect to the local MYSQL service as 'root' and without a password!\e[00m\n$mysqlconnectnopass" 
+  echo -e "\n"
+fi
 
-command -v psql && {
-	#postgres details - if installed
-	postgver=`psql -V 2>/dev/null`
-	echo -e "\e[00;31m[-] Postgres version:\e[00m\n$postgver" 
-	echo -e "\n"
+#postgres details - if installed
+postgver=`psql -V 2>/dev/null`
+if [ "$postgver" ]; then
+  echo -e "\e[00;31m[-] Postgres version:\e[00m\n$postgver" 
+  echo -e "\n"
+fi
 
-	#checks to see if any postgres password exists and connects to DB 'template0' - following commands are a variant on this
-	postcon1=`psql -U postgres -w template0 -c 'select version()' 2>/dev/null | grep version`
-	echo -e "\e[00;33m[+] We can connect to Postgres DB 'template0' as user 'postgres' with no password!:\e[00m\n$postcon1" 
-	echo -e "\n"
+#checks to see if any postgres password exists and connects to DB 'template0' - following commands are a variant on this
+postcon1=`psql -U postgres -w template0 -c 'select version()' 2>/dev/null | grep version`
+if [ "$postcon1" ]; then
+  echo -e "\e[00;33m[+] We can connect to Postgres DB 'template0' as user 'postgres' with no password!:\e[00m\n$postcon1" 
+  echo -e "\n"
+fi
 
-	postcon11=`psql -U postgres -w template1 -c 'select version()' 2>/dev/null | grep version`
-	 echo -e "\e[00;33m[+] We can connect to Postgres DB 'template1' as user 'postgres' with no password!:\e[00m\n$postcon11" 
-	 echo -e "\n"
+postcon11=`psql -U postgres -w template1 -c 'select version()' 2>/dev/null | grep version`
+if [ "$postcon11" ]; then
+  echo -e "\e[00;33m[+] We can connect to Postgres DB 'template1' as user 'postgres' with no password!:\e[00m\n$postcon11" 
+  echo -e "\n"
+fi
 
-	postcon2=`psql -U pgsql -w template0 -c 'select version()' 2>/dev/null | grep version`
-	echo -e "\e[00;33m[+] We can connect to Postgres DB 'template0' as user 'psql' with no password!:\e[00m\n$postcon2" 
-	echo -e "\n"
+postcon2=`psql -U pgsql -w template0 -c 'select version()' 2>/dev/null | grep version`
+if [ "$postcon2" ]; then
+  echo -e "\e[00;33m[+] We can connect to Postgres DB 'template0' as user 'psql' with no password!:\e[00m\n$postcon2" 
+  echo -e "\n"
+fi
 
-	postcon22=`psql -U pgsql -w template1 -c 'select version()' 2>/dev/null | grep version`
-	echo -e "\e[00;33m[+] We can connect to Postgres DB 'template1' as user 'psql' with no password!:\e[00m\n$postcon22" 
-	echo -e "\n"
-}
+postcon22=`psql -U pgsql -w template1 -c 'select version()' 2>/dev/null | grep version`
+if [ "$postcon22" ]; then
+  echo -e "\e[00;33m[+] We can connect to Postgres DB 'template1' as user 'psql' with no password!:\e[00m\n$postcon22" 
+  echo -e "\n"
+fi
 
-command -v apache2 && {
-	#apache details - if installed
-	apachever=`apache2 -v 2>/dev/null; httpd -v 2>/dev/null`
-	  echo -e "\e[00;31m[-] Apache version:\e[00m\n$apachever" 
-	  echo -e "\n"
+#apache details - if installed
+apachever=`apache2 -v 2>/dev/null; httpd -v 2>/dev/null`
+if [ "$apachever" ]; then
+  echo -e "\e[00;31m[-] Apache version:\e[00m\n$apachever" 
+  echo -e "\n"
+fi
 
-	#what account is apache running under
-	apacheusr=`grep -i 'user\|group' /etc/apache2/envvars 2>/dev/null |awk '{sub(/.*\export /,"")}1' 2>/dev/null`
-	  echo -e "\e[00;31m[-] Apache user configuration:\e[00m\n$apacheusr" 
-	  echo -e "\n"
+#what account is apache running under
+apacheusr=`grep -i 'user\|group' /etc/apache2/envvars 2>/dev/null |awk '{sub(/.*\export /,"")}1' 2>/dev/null`
+if [ "$apacheusr" ]; then
+  echo -e "\e[00;31m[-] Apache user configuration:\e[00m\n$apacheusr" 
+  echo -e "\n"
+fi
 
-	if [ "$export" ] && [ "$apacheusr" ]; then
-	  mkdir --parents $format/etc-export/apache2/ 2>/dev/null
-	  cp /etc/apache2/envvars $format/etc-export/apache2/envvars 2>/dev/null
-	fi
+if [ "$export" ] && [ "$apacheusr" ]; then
+  mkdir --parents $format/etc-export/apache2/ 2>/dev/null
+  cp /etc/apache2/envvars $format/etc-export/apache2/envvars 2>/dev/null
+fi
 
-	#installed apache modules
-	apachemodules=`apache2ctl -M 2>/dev/null; httpd -M 2>/dev/null`
-	if [ "$apachemodules" ]; then
-	  echo -e "\e[00;31m[-] Installed Apache modules:\e[00m\n$apachemodules" 
-	  echo -e "\n"
-	fi
+#installed apache modules
+apachemodules=`apache2ctl -M 2>/dev/null; httpd -M 2>/dev/null`
+if [ "$apachemodules" ]; then
+  echo -e "\e[00;31m[-] Installed Apache modules:\e[00m\n$apachemodules" 
+  echo -e "\n"
+fi
 
-	#htpasswd check
-	htpasswd=`find / -name .htpasswd -print -exec cat {} \; 2>/dev/null`
-	if [ "$htpasswd" ]; then
-	    echo -e "\e[00;33m[-] htpasswd found - could contain passwords:\e[00m\n$htpasswd"
-	    echo -e "\n"
-	fi
+#htpasswd check
+htpasswd=`find / -name .htpasswd -print -exec cat {} \; 2>/dev/null`
+if [ "$htpasswd" ]; then
+    echo -e "\e[00;33m[-] htpasswd found - could contain passwords:\e[00m\n$htpasswd"
+    echo -e "\n"
+fi
 
-	#anything in the default http home dirs (a thorough only check as output can be large)
-	if [ "$thorough" = "1" ]; then
-	  apachehomedirs=`ls -alhR /var/www/ 2>/dev/null; ls -alhR /srv/www/htdocs/ 2>/dev/null; ls -alhR /usr/local/www/apache2/data/ 2>/dev/null; ls -alhR /opt/lampp/htdocs/ 2>/dev/null`
-	  if [ "$apachehomedirs" ]; then
-	    echo -e "\e[00;31m[-] www home dir contents:\e[00m\n$apachehomedirs" 
-	    echo -e "\n"
-	  fi
-	fi
-}
+#anything in the default http home dirs (a thorough only check as output can be large)
+if [ "$thorough" = "1" ]; then
+  apachehomedirs=`ls -alhR /var/www/ 2>/dev/null; ls -alhR /srv/www/htdocs/ 2>/dev/null; ls -alhR /usr/local/www/apache2/data/ 2>/dev/null; ls -alhR /opt/lampp/htdocs/ 2>/dev/null`
+  if [ "$apachehomedirs" ]; then
+    echo -e "\e[00;31m[-] www home dir contents:\e[00m\n$apachehomedirs" 
+    echo -e "\n"
+  fi
+fi
+
+[ "$interactive" ] && is_interactive
+
 }
 
 interesting_files()
@@ -932,6 +972,7 @@ privatekeyfiles=`grep -rl "PRIVATE KEY-----" /home 2>/dev/null`
   		echo -e "\e[00;33m[+] Private SSH keys found!:\e[00m\n$privatekeyfiles"
   		echo -e "\n"
 	fi
+[ "$interactive" ] && is_interactive
 fi
 
 #look for AWS keys - thanks djhohnstein
@@ -941,6 +982,7 @@ awskeyfiles=`grep -rli "aws_secret_access_key" /home 2>/dev/null`
   		echo -e "\e[00;33m[+] AWS secret keys found!:\e[00m\n$awskeyfiles"
   		echo -e "\n"
 	fi
+[ "$interactive" ] && is_interactive
 fi
 
 #look for git credential files - thanks djhohnstein
@@ -950,6 +992,7 @@ gitcredfiles=`find / -name ".git-credentials" 2>/dev/null`
   		echo -e "\e[00;33m[+] Git credentials saved on the machine!:\e[00m\n$gitcredfiles"
   		echo -e "\n"
 	fi
+[ "$interactive" ] && is_interactive
 fi
 
 #list all world-writable files excluding /proc and /sys
@@ -959,6 +1002,7 @@ wwfiles=`find / ! -path "*/proc/*" ! -path "/sys/*" -perm -2 -type f -exec ls -l
 		echo -e "\e[00;31m[-] World-writable files (excluding /proc and /sys):\e[00m\n$wwfiles" 
 		echo -e "\n"
 	fi
+[ "$interactive" ] && is_interactive
 fi
 
 if [ "$thorough" = "1" ]; then
@@ -966,6 +1010,7 @@ if [ "$thorough" = "1" ]; then
 		mkdir $format/ww-files/ 2>/dev/null
 		for i in $wwfiles; do cp --parents $i $format/ww-files/; done 2>/dev/null
 	fi
+[ "$interactive" ] && is_interactive
 fi
 
 #are any .plan files accessible in /home (could contain useful information)
@@ -990,6 +1035,8 @@ if [ "$export" ] && [ "$bsdusrplan" ]; then
   mkdir $format/plan_files/ 2>/dev/null
   for i in $bsdusrplan; do cp --parents $i $format/plan_files/; done 2>/dev/null
 fi
+
+[ "$interactive" ] && is_interactive
 
 #are there any .rhosts files accessible - these may allow us to login as another user etc.
 rhostsusr=`find /home -iname *.rhosts -exec ls -la {} 2>/dev/null \; -exec cat {} 2>/dev/null \;`
@@ -1046,6 +1093,7 @@ if [ "$thorough" = "1" ]; then
     echo -e "$fstab"
     echo -e "\n"
   fi
+[ "$interactive" ] && is_interactive
 fi
 
 #looking for credentials in /etc/fstab
@@ -1240,6 +1288,9 @@ if [ "$export" ] && [ "$readmailroot" ]; then
   mkdir $format/mail-from-root/ 2>/dev/null
   cp $readmailroot $format/mail-from-root/ 2>/dev/null
 fi
+
+[ "$interactive" ] && is_interactive
+
 }
 
 docker_checks()
@@ -1279,6 +1330,9 @@ if [ "$dockeryml" ]; then
   echo -e "\e[00;31m[-] Anything juicy in docker-compose.yml:\e[00m\n$dockeryml" 
   echo -e "\n"
 fi
+
+[ "$interactive" ] && is_interactive
+
 }
 
 lxc_container_checks()
@@ -1321,13 +1375,14 @@ call_each()
   footer
 }
 
-while getopts "h:k:r:e:st" option; do
+while getopts "h:k:r:e:sti" option; do
  case "${option}" in
     k) keyword=${OPTARG};;
     r) report=${OPTARG}"-"`date +"%d-%m-%y"`;;
     e) export=${OPTARG};;
     s) sudopass=1;;
     t) thorough=1;;
+    i) interactive=1;;
     h) usage; exit;;
     *) usage; exit;;
  esac
